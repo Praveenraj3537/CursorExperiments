@@ -76,12 +76,16 @@ WSGI_APPLICATION = 'medportal.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+import os
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Hint: primary persistence is in MongoDB via PyMongo in views. The default
+# SQLite is kept for admin/auth sessions.
 
 
 # Password validation

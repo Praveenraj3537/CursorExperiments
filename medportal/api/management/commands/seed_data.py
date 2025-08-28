@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from api.models import Medicine
+from api.mongo import get_db, get_next_id
 
 
 class Command(BaseCommand):
@@ -26,9 +27,26 @@ class Command(BaseCommand):
                 'stock': 0,
             },
         ]
-        created = 0
+        # Seed into Mongo as well
+        db = get_db()
+        created_sql = 0
         for s in samples:
             obj, was_created = Medicine.objects.get_or_create(name=s['name'], defaults=s)
             if was_created:
-                created += 1
-        self.stdout.write(self.style.SUCCESS(f'Seed completed. {created} new medicines added.'))
+                created_sql += 1
+        created_mongo = 0
+        for s in samples:
+            existing = db.medicines.find_one({'name': s['name']})
+            if existing:
+                continue
+            doc = {
+                'id': get_next_id('medicines'),
+                'name': s['name'],
+                'content': s['content'],
+                'price': float(s['price']),
+                'stock': s['stock'],
+                'is_active': True,
+            }
+            db.medicines.insert_one(doc)
+            created_mongo += 1
+        self.stdout.write(self.style.SUCCESS(f'Seed completed. SQL:{created_sql} Mongo:{created_mongo}'))
