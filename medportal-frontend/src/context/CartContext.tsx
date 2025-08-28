@@ -22,16 +22,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       add: (medicine, qty) => {
         setLines(prev => {
           const existing = prev.find(l => l.medicine.id === medicine.id)
-          const newQty = (existing?.quantity || 0) + qty
-          const clampedQty = Math.max(0, Math.min(newQty, Math.min(medicine.stock, 10)))
+          const othersTotal = prev.filter(l => l.medicine.id !== medicine.id).reduce((s, l) => s + l.quantity, 0)
+          const maxForThis = Math.max(0, Math.min(medicine.stock, 10 - othersTotal))
+          const newQty = Math.min((existing?.quantity || 0) + qty, maxForThis)
           if (existing) {
-            return prev.map(l => (l.medicine.id === medicine.id ? { ...l, quantity: clampedQty } : l))
+            return prev.map(l => (l.medicine.id === medicine.id ? { ...l, quantity: newQty } : l))
           }
-          return [...prev, { medicine, quantity: clampedQty }]
+          return [...prev, { medicine, quantity: newQty }]
         })
       },
       update: (medicineId, qty) => {
-        setLines(prev => prev.map(l => (l.medicine.id === medicineId ? { ...l, quantity: Math.max(0, qty) } : l)))
+        setLines(prev => {
+          const target = prev.find(l => l.medicine.id === medicineId)
+          if (!target) return prev
+          const othersTotal = prev.filter(l => l.medicine.id !== medicineId).reduce((s, l) => s + l.quantity, 0)
+          const maxForThis = Math.max(0, Math.min(target.medicine.stock, 10 - othersTotal))
+          const newQty = Math.max(0, Math.min(qty, maxForThis))
+          return prev.map(l => (l.medicine.id === medicineId ? { ...l, quantity: newQty } : l))
+        })
       },
       remove: (medicineId) => setLines(prev => prev.filter(l => l.medicine.id !== medicineId)),
       clear: () => setLines([]),
