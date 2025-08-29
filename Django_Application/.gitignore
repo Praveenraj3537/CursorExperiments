@@ -1,0 +1,6 @@
+ecommerce/__pycache__
+front/node_modules
+venv
+db.sqlite3
+setup_mongodb.bat
+setup.bat
